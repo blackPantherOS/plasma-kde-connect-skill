@@ -44,7 +44,7 @@ class KDEConnectSkill(MycroftSkill):
                 singleNode = xmldoc['node']['node']['@name']
                 nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
             phone_list.append(nodeName)
-        if len(phone_list) > 1:
+        if len(phone_list) == 1:
             return phone_list[0]
         else:
 #            itt hívd meg a listából való kiválasztást!
