@@ -26,14 +26,13 @@ class KDEConnectSkill(MycroftSkill):
     def __init__(self):
         super(KDEConnectSkill, self).__init__(name="KDEConnectSkill")
     
-    @intent_handler(IntentBuilder("FindMyPhone").require("FindMyPhoneKeyword").build())
-    def handle_findmyphone_intent(self, message):
-        bus = dbus.SessionBus()
+    def get_phone_list(self, bus):
+        phone_list = []
         remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
         getNode = remote_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
         xmldoc = xmltodict.parse(getNode)
-        try:
-            for i in range(len(xmldoc['node']['node'])):
+        for i in range(len(xmldoc['node']['node'])):
+            try:
                 nodeName = xmldoc['node']['node'][i]['@name']
                 findNodeObject = "/modules/kdeconnect/devices/{0}".format(nodeName)
                 sub_object = bus.get_object("org.kde.kdeconnect", findNodeObject)
@@ -41,9 +40,20 @@ class KDEConnectSkill(MycroftSkill):
                 nodedoc = xmltodict.parse(sub_result)
                 if 'node' in nodedoc['node'].keys():
                     nodeName = findNodeObject
-        except:
+            except:
                 singleNode = xmldoc['node']['node']['@name']
                 nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
+            phone_list.append(nodeName)
+        if len(phone_list) > 1:
+            return phone_list[0]
+        else:
+#            itt hívd meg a listából való kiválasztást!
+            pass
+    
+    @intent_handler(IntentBuilder("FindMyPhone").require("FindMyPhoneKeyword").build())
+    def handle_findmyphone_intent(self, message):
+        bus = dbus.SessionBus()
+        nodeName = self.get_phone(bus)
         findPhoneNodePath = "{0}/findmyphone".format(nodeName)
         remote_object2 = bus.get_object("org.kde.kdeconnect", findPhoneNodePath)
         remote_object2.ring(dbus_interface="org.kde.kdeconnect.device.findmyphone")
@@ -52,21 +62,7 @@ class KDEConnectSkill(MycroftSkill):
     @intent_handler(IntentBuilder("PingMyPhone").require("PingMyPhoneKeyword").build())
     def handle_pingmyphone_intent(self, message):
         bus = dbus.SessionBus()
-        remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
-        getNode = remote_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-        xmldoc = xmltodict.parse(getNode)
-        try:
-            for i in range(len(xmldoc['node']['node'])):
-                nodeName = xmldoc['node']['node'][i]['@name']
-                findNodeObject = "/modules/kdeconnect/devices/{0}".format(nodeName)
-                sub_object = bus.get_object("org.kde.kdeconnect", findNodeObject)
-                sub_result = sub_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-                nodedoc = xmltodict.parse(sub_result)
-                if 'node' in nodedoc['node'].keys():
-                    nodeName = findNodeObject
-        except:
-                singleNode = xmldoc['node']['node']['@name']
-                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
+        nodeName = self.get_phone(bus)
         pingPhoneNodePath = "{0}/ping".format(nodeName)
         remote_object2 = bus.get_object("org.kde.kdeconnect", pingPhoneNodePath)
         remote_object2.sendPing("Ping From Mycroft!", dbus_interface="org.kde.kdeconnect.device.ping")
@@ -74,21 +70,7 @@ class KDEConnectSkill(MycroftSkill):
     @intent_handler(IntentBuilder("ShowMyPhoneFiles").require("ShowMyPhoneFilesKeyword").build())
     def handle_showmyphonefiles_intent(self, message):
         bus = dbus.SessionBus()
-        remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
-        getNode = remote_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-        xmldoc = xmltodict.parse(getNode)
-        try:
-            for i in range(len(xmldoc['node']['node'])):
-                nodeName = xmldoc['node']['node'][i]['@name']
-                findNodeObject = "/modules/kdeconnect/devices/{0}".format(nodeName)
-                sub_object = bus.get_object("org.kde.kdeconnect", findNodeObject)
-                sub_result = sub_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-                nodedoc = xmltodict.parse(sub_result)
-                if 'node' in nodedoc['node'].keys():
-                    nodeName = findNodeObject
-        except:
-                singleNode = xmldoc['node']['node']['@name']
-                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
+        nodeName = self.get_phone(bus)
         sftpPhoneNodePath = "{0}/sftp".format(nodeName)
         remote_object2 = bus.get_object("org.kde.kdeconnect", sftpPhoneNodePath)
         remote_object2.startBrowsing(dbus_interface="org.kde.kdeconnect.device.sftp")
@@ -142,22 +124,9 @@ class KDEConnectSkill(MycroftSkill):
         utterance = message.data.get('utterance')
         utteranceChanged = utterance.replace(message.data.get("SendSmsGetContentKeyword"), '')
         contentString = utteranceChanged.lstrip()
+
         bus = dbus.SessionBus()
-        remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
-        getNode = remote_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-        xmldoc = xmltodict.parse(getNode)
-        try:
-            for i in range(len(xmldoc['node']['node'])):
-                nodeName = xmldoc['node']['node'][i]['@name']
-                findNodeObject = "/modules/kdeconnect/devices/{0}".format(nodeName)
-                sub_object = bus.get_object("org.kde.kdeconnect", findNodeObject)
-                sub_result = sub_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
-                nodedoc = xmltodict.parse(sub_result)
-                if 'node' in nodedoc['node'].keys():
-                    nodeName = findNodeObject
-        except:
-                singleNode = xmldoc['node']['node']['@name']
-                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
+        nodeName = self.get_phone(bus)
         telephonyPhoneNodePath = "{0}/telephony".format(nodeName)
         remote_object2 = bus.get_object("org.kde.kdeconnect", telephonyPhoneNodePath)
         remote_object2.sendSms(contactNumber, contentString, dbus_interface="org.kde.kdeconnect.device.telephony")
