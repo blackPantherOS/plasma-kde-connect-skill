@@ -26,7 +26,7 @@ class KDEConnectSkill(MycroftSkill):
     def __init__(self):
         super(KDEConnectSkill, self).__init__(name="KDEConnectSkill")
     
-    def get_phone_list(self, bus):
+    def get_phone(self, bus):
         phone_list = []
         remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
         getNode = remote_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
@@ -41,8 +41,9 @@ class KDEConnectSkill(MycroftSkill):
                 if 'node' in nodedoc['node'].keys():
                     nodeName = findNodeObject
             except:
-                singleNode = xmldoc['node']['node']['@name']
-                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
+                pass
+#                singleNode = xmldoc['node']['node']['@name']
+#                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
             phone_list.append(nodeName)
         if len(phone_list) == 1:
             return phone_list[0]
