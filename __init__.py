@@ -26,6 +26,10 @@ class KDEConnectSkill(MycroftSkill):
     def __init__(self):
         super(KDEConnectSkill, self).__init__(name="KDEConnectSkill")
     
+    def choose_a_phone(self, phone_list):
+        #Egy listából kiválasztod a megfelelő telefont. Hogy ne legyen None most átmenetileg az utolsó telefonnal térek vissza...
+        return phone_list[-1]
+    
     def get_phone(self, bus):
         phone_list = []
         remote_object = bus.get_object("org.kde.kdeconnect", "/modules/kdeconnect/devices")
@@ -33,23 +37,23 @@ class KDEConnectSkill(MycroftSkill):
         xmldoc = xmltodict.parse(getNode)
         for i in range(len(xmldoc['node']['node'])):
             try:
-                nodeName = xmldoc['node']['node'][i]['@name']
+                try:
+                    nodeName = xmldoc['node']['node'][i]['@name']
+                except:
+                    nodeName = xmldoc['node']['node']['@name']
                 findNodeObject = "/modules/kdeconnect/devices/{0}".format(nodeName)
                 sub_object = bus.get_object("org.kde.kdeconnect", findNodeObject)
                 sub_result = sub_object.Introspect(dbus_interface="org.freedesktop.DBus.Introspectable")
                 nodedoc = xmltodict.parse(sub_result)
                 if 'node' in nodedoc['node'].keys():
-                    nodeName = findNodeObject
+                    phone = findNodeObject
+                    phone_list.append(phone)
             except:
-                pass
-#                singleNode = xmldoc['node']['node']['@name']
-#                nodeName = "/modules/kdeconnect/devices/{0}".format(singleNode)
-            phone_list.append(nodeName)
+                __import__("traceback").print_exc()
         if len(phone_list) == 1:
             return phone_list[0]
         else:
-#            itt hívd meg a listából való kiválasztást!
-            pass
+            return self.choose_a_phone(phone_list)
     
     @intent_handler(IntentBuilder("FindMyPhone").require("FindMyPhoneKeyword").build())
     def handle_findmyphone_intent(self, message):
